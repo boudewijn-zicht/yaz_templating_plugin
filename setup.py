@@ -7,5 +7,5 @@ setup(name='yaz_templating_plugin',
       author_email='yaz@frayja.com',
       license='MIT',
       packages=['yaz_templating_plugin'],
-      install_requires=['yaz', 'jinja2'],
+      install_requires=['yaz', 'jinja2', 'colored'],
       zip_safe=False)
