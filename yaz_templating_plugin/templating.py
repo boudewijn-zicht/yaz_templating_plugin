@@ -1,3 +1,4 @@
+import typing
 import colored
 import datetime
 import jinja2
@@ -5,6 +6,7 @@ import jinja2.ext
 import shlex
 
 from yaz.plugin import Plugin
+
 
 # todo: use colorama instead of colored.  colorama is likely to already be installed
 
@@ -22,7 +24,8 @@ class Filters:
             return value.strftime(format)
         if isinstance(value, str) and value == "now":
             return datetime.datetime.now().strftime(format)
-        # todo: return undefined
+            # todo: return undefined
+
 
 class ColorExtension(jinja2.ext.Extension):
     tags = set(["color"])
@@ -37,7 +40,7 @@ class ColorExtension(jinja2.ext.Extension):
             else:
                 for index, tuple in zip(range(3), tuple.iter_child_nodes()):
                     args[index] = tuple
-        body = parser.parse_statements(["name:endcolor"], drop_needle=True)
+        body = parser.parse_statements(["name:endcolor", "name:end_color"], drop_needle=True)
         return jinja2.nodes.CallBlock(self.call_method("_color", args), [], [], body).set_lineno(lineno)
 
     def _color(self, fg, bg, attr, caller):
@@ -47,16 +50,18 @@ class ColorExtension(jinja2.ext.Extension):
                         caller(),
                         colored.attr("reset") if fg or bg or attr else ""])
 
+
 class QuoteExtension(jinja2.ext.Extension):
     tags = set(["quote"])
 
     def parse(self, parser):
         lineno = next(parser.stream).lineno
-        body = parser.parse_statements(["name:endquote"], drop_needle=True)
+        body = parser.parse_statements(["name:endquote", "name:end_quote"], drop_needle=True)
         return jinja2.nodes.CallBlock(self.call_method("_quote"), [], [], body).set_lineno(lineno)
 
     def _quote(self, caller):
         return Filters.quote(caller())
+
 
 class Templating(Plugin):
     def __init__(self):
@@ -69,7 +74,7 @@ class Templating(Plugin):
         self.environment.filters["quote"] = Filters.quote
         self.environment.filters["datetimeformat"] = Filters.datetimeformat
 
-    def render(self, template, context):
+    def render(self, template: str, context: typing.Union[None, dict]):
         assert isinstance(template, str), type(template)
-        assert isinstance(context, dict), type(context)
-        return self.environment.from_string(template).render(context)
+        assert context is None or isinstance(context, dict), type(context)
+        return self.environment.from_string(template).render({} if context is None else context)
